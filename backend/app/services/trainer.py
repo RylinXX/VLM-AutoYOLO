@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from ..core.config import settings
+from ..core.exceptions import NotFoundError
 from ..core.ids import to_uuid
 from . import yolo_format
 
@@ -101,7 +102,11 @@ def _build_dataset(
     detections: list[Detection] = []
 
     for det_id in detection_ids:
-        det = db.query(Detection).filter(Detection.id == to_uuid(det_id, "Detection")).first()
+        try:
+            det_uuid = to_uuid(det_id, "Detection")
+        except NotFoundError:
+            continue
+        det = db.query(Detection).filter(Detection.id == det_uuid).first()
         if not det or det.status != "completed":
             continue
         src = Path(det.image_path)

@@ -155,7 +155,7 @@ export function Sidebar({
           />
         ) : (
           <VideoPanel
-            onLoadKeyframes={(fs, _videoName) => {
+            onLoadKeyframes={(fs) => {
               handleSelectKeyframe(fs);
               setInputMode("image");
             }}

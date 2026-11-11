@@ -199,11 +199,7 @@ def cancel_job(job_id: str) -> bool:
     # Check if it's a pending job
     db = SessionLocal()
     try:
-        job = (
-            db.query(TrainingJob)
-            .filter(TrainingJob.id == to_uuid(job_id, "TrainingJob"))
-            .first()
-        )
+        job = db.query(TrainingJob).filter(TrainingJob.id == to_uuid(job_id, "TrainingJob")).first()
         if job and job.status == "pending":
             job.status = "cancelled"
             db.commit()

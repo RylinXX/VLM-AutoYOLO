@@ -614,12 +614,9 @@ def export_annotated_video(
         cap.release()
         raise HTTPException(400, "Invalid video dimensions")
 
-    raw_tmp = tempfile.NamedTemporaryFile(suffix=".mp4", delete=False)
-    raw_path = Path(raw_tmp.name)
-    raw_tmp.close()
-    writer = cv2.VideoWriter(
-        str(raw_path), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height)
-    )
+    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as raw_tmp:
+        raw_path = Path(raw_tmp.name)
+    writer = cv2.VideoWriter(str(raw_path), cv2.VideoWriter_fourcc(*"mp4v"), fps, (width, height))
     frame_num = 0
     try:
         while True:
@@ -637,8 +634,13 @@ def export_annotated_video(
                 (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)
                 cv2.rectangle(frame, (x1, y1 - th - 4), (x1 + tw + 4, y1), (0, 255, 0), -1)
                 cv2.putText(
-                    frame, label, (x1 + 2, y1 - 4),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1,
+                    frame,
+                    label,
+                    (x1 + 2, y1 - 4),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    (0, 0, 0),
+                    1,
                 )
             ts_str = f"Frame {frame_num} | {frame_num / fps:.1f}s"
             cv2.putText(frame, ts_str, (8, 24), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
@@ -659,13 +661,32 @@ def export_annotated_video(
     final_path = raw_path.with_name(raw_path.stem + "_h264.mp4")
     try:
         subprocess.run(
-            ["ffmpeg", "-y", "-i", str(raw_path), "-c:v", "libx264",
-             "-preset", "veryfast", "-crf", "23", "-pix_fmt", "yuv420p", str(final_path)],
-            capture_output=True, timeout=900, check=False,
+            [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(raw_path),
+                "-c:v",
+                "libx264",
+                "-preset",
+                "veryfast",
+                "-crf",
+                "23",
+                "-pix_fmt",
+                "yuv420p",
+                str(final_path),
+            ],
+            capture_output=True,
+            timeout=900,
+            check=False,
         )
     except Exception:
         final_path = None
-    use_path = final_path if final_path and final_path.exists() and final_path.stat().st_size > 0 else raw_path
+    use_path = (
+        final_path
+        if final_path and final_path.exists() and final_path.stat().st_size > 0
+        else raw_path
+    )
     if use_path != raw_path:
         raw_path.unlink(missing_ok=True)
     return FileResponse(
@@ -674,4 +695,3 @@ def export_annotated_video(
         filename=f"annotated_{Path(video.file_name).stem}.mp4",
         background=BackgroundTask(lambda: Path(use_path).unlink(missing_ok=True)),
     )
-
