@@ -1,0 +1,98 @@
+from __future__ import annotations
+
+import enum
+import uuid
+from datetime import UTC, datetime
+
+from sqlalchemy import JSON, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text, Uuid
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from ..core.database import Base
+
+
+class ModelType(enum.StrEnum):
+    vlm = "vlm"
+    vlm_sam2 = "vlm+sam2"
+    sam3 = "sam3"
+
+
+class FilterMode(enum.StrEnum):
+    best = "best"
+    nms = "nms"
+    all = "all"
+
+
+class DetectionStatus(enum.StrEnum):
+    completed = "completed"
+    failed = "failed"
+
+
+class Detection(Base):
+    __tablename__ = "detections"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    image_path: Mapped[str] = mapped_column(Text, nullable=False)
+    image_name: Mapped[str] = mapped_column(String(512), nullable=False)
+    categories: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
+    model_name: Mapped[str] = mapped_column(String(256), default="LocateAnything-3B")
+    model_type: Mapped[ModelType | None] = mapped_column(
+        Enum(ModelType, values_callable=lambda x: [e.value for e in x]), nullable=True
+    )
+    image_width: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    image_height: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    elapsed_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    filter_mode: Mapped[FilterMode | None] = mapped_column(Enum(FilterMode), nullable=True)
+    filter_nms_iou: Mapped[float | None] = mapped_column(Float, nullable=True)
+    status: Mapped[DetectionStatus] = mapped_column(
+        Enum(DetectionStatus),
+        default=DetectionStatus.completed,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+    )
+
+    boxes: Mapped[list[DetectionBox]] = relationship(
+        "DetectionBox",
+        back_populates="detection",
+        cascade="all, delete-orphan",
+    )
+
+    __table_args__ = (
+        Index("ix_detections_created_at", "created_at"),
+        Index("ix_detections_status", "status"),
+    )
+
+
+class DetectionBox(Base):
+    __tablename__ = "detection_boxes"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+    )
+    detection_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True),
+        ForeignKey("detections.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    class_name: Mapped[str] = mapped_column(String(256), nullable=False)
+    x1: Mapped[int] = mapped_column(Integer, nullable=False)
+    y1: Mapped[int] = mapped_column(Integer, nullable=False)
+    x2: Mapped[int] = mapped_column(Integer, nullable=False)
+    y2: Mapped[int] = mapped_column(Integer, nullable=False)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+    mask_polygon: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+    )
+
+    detection: Mapped[Detection] = relationship("Detection", back_populates="boxes")
+
+    __table_args__ = (Index("ix_detection_boxes_detection_id", "detection_id"),)

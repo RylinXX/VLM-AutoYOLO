@@ -1,0 +1,54 @@
+[project]
+name = "locate-anything-backend"
+version = "1.5.16"
+description = "Backend API for VLM-AutoYOLO - VLM-powered auto-labeling and YOLO training platform"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "transformers>=4.57.1",
+    "torch>=2.6.0",
+    "Pillow>=11.0.0",
+    "opencv-python-headless>=4.10.0",
+    "numpy>=2.0.0",
+    "python-multipart>=0.0.18",
+    "alembic>=1.14.0",
+]
+
+[project.optional-dependencies]
+cuda = [
+    "flash-attn>=2.5.0",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.25.0",
+    "httpx>=0.28.0",
+    "ruff>=0.11.0",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [
+    "alembic/versions",  # Auto-generated migrations
+]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "I", "N", "W",      # pycodestyle + isort + naming
+    "UP",                          # pyupgrade
+    "B",                           # flake8-bugbear
+    "SIM",                         # flake8-simplify
+]
+ignore = [
+    "B008",                        # FastAPI Depends/File in argument defaults
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

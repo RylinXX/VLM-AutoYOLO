@@ -1,0 +1,50 @@
+# Model weights
+backend/model/
+backend/trained_models/
+backend/training_runs/
+backend/uploads/
+runs/
+
+# Python
+backend/.venv/
+__pycache__/
+*.pyc
+.eggs/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Env
+.env
+backend/.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Misc
+*.log
+/tmp/
+backend/yolo26n.pt
+*.pt
+backend/data.db
+docs/src/
+.playwright-mcp/
+test-results/
+.cli_pids.json
+
+# ── Local deployment assets (NOT tracked in this repo) ────────────────
+# Bundled static ffmpeg / ffprobe binaries (~61MB total)
+/bin/ffmpeg
+/bin/ffprobe
+# Pretrained weights: SAM2 checkpoint, YOLO pretrained .pt (VLM lives in backend/model/)
+/backend/pretrained/
+# Demo / evaluation images (~31MB)
+/test_images/
+# Local runtime state: SQLite DB, chunk-upload scratch space, import progress
+/backend/autolabeling.db
+/backend/import_progress/
+/backend/import_chunks/

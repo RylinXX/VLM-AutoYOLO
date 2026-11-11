@@ -1,0 +1,49 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any
+
+from pydantic import Field, field_validator
+
+from .common import BaseSchema, _coerce_uuid
+
+
+class TrainRequest(BaseSchema):
+    detection_ids: list[str] = Field(..., min_length=1)
+    model_variant: str = Field(default="yolo26n")
+    epochs: int = Field(default=100, ge=1, le=1000)
+    imgsz: int = Field(default=640, ge=320, le=1920)
+    batch: int = Field(default=16, ge=1, le=128)
+    train_ratio: float = Field(default=0.7, ge=0.1, le=1.0, description="training set ratio")
+    val_ratio: float = Field(
+        default=0.2, ge=0.0, le=0.9, description="validation set ratio (test = 1 - train - val)"
+    )
+    task_type: str = Field(default="detect", description="detect | segment | classify")
+
+
+class TrainingJobOut(BaseSchema):
+    id: str
+    name: str | None = None
+    model_variant: str
+    epochs: int
+    imgsz: int
+    batch: int
+    train_ratio: float = 0.7
+    val_ratio: float = 0.2
+    task_type: str = "detect"
+    detection_ids: list[str] = []
+    class_map: dict | None = None
+    status: str
+    metrics: dict | None = None
+    model_path: str | None = None
+    onnx_path: str | None = None
+    error_message: str | None = None
+    created_at: datetime
+    completed_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def coerce_id(cls, v: Any) -> str:
+        return _coerce_uuid(v)
